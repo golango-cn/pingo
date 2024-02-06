@@ -56,7 +56,7 @@ package main
 
 import (
 	"log"
-	"github.com/dullgiulio/pingo"
+	"github.com/golango-cn/pingo"
 )
 
 func main() {
