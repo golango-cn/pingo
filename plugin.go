@@ -37,7 +37,6 @@ type Plugin struct {
 	unixdir     string
 	params      []string
 	initTimeout time.Duration
-	exitTimeout time.Duration
 	handler     ErrorHandler
 	running     bool
 	meta        meta
@@ -68,7 +67,6 @@ func NewPlugin(proto, path string, params ...string) *Plugin {
 		proto:       proto,
 		params:      params,
 		initTimeout: 2 * time.Second,
-		exitTimeout: 2 * time.Second,
 		handler:     NewDefaultErrorHandler(),
 		meta:        meta("pingo" + randstr(5)),
 		objsCh:      make(chan *objects),
@@ -104,7 +102,6 @@ func (p *Plugin) SetTimeout(t time.Duration) {
 		return
 	}
 	p.initTimeout = t
-	p.exitTimeout = t
 }
 
 func (p *Plugin) SetSocketDirectory(dir string) {
@@ -520,15 +517,9 @@ func (p *Plugin) run() {
 			if c.connCh == nil || c.client == nil {
 				c.kill()
 			} else {
-				// Be sure to kill the process if it doesn't obey Exit.
-				go func(pid int, t time.Duration) {
-					<-time.After(t)
-
-					if proc, err := os.FindProcess(pid); err == nil {
-						proc.Kill()
-					}
-				}(pid, p.exitTimeout)
-
+				if proc, err := os.FindProcess(pid); err == nil {
+					proc.Kill()
+				}
 				c.client.Call(internalObject+".Exit", 0, nil)
 			}
 
